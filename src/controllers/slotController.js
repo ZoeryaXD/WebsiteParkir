@@ -3,7 +3,7 @@ const bookingController = require('./bookingController');
 
 // 1. Update dari Sensor IR
 exports.updateIRSensor = (req, res) => {
-  const { slotId, status } = req.body; // status: "TERISI" / "KOSONG"
+  const { slotId, status } = req.body; 
   const io = req.app.get('socketio');
   const slot = parkingSlots.find(s => s.id === slotId);
 
@@ -13,8 +13,18 @@ exports.updateIRSensor = (req, res) => {
 
   if (status === 'TERISI') {
     slot.entryTime = new Date();
+    
+    // --- TAMBAHAN BARU: Trigger Python saat slot terisi ---
+    fetch('http://localhost:5001/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slotId: slot.id })
+    })
+    .then(response => console.log(`[TRIGGER OK] Python memindai Slot ${slot.id}`))
+    .catch(err => console.error('[TRIGGER ERROR] Python tidak merespon:', err));
+    // ------------------------------------------------------
+
   } else if (status === 'KOSONG') {
-    // Hitung waktu dan tarif jika slot kembali KOSONG
     let durationMinutes = 1;
     let totalCost = parseInt(process.env.TARIF_PER_JAM || 3000);
 
@@ -35,7 +45,6 @@ exports.updateIRSensor = (req, res) => {
     };
     transactionLogs.unshift(log);
 
-    // Reset data slot
     slot.currentPlate = null;
     slot.entryTime = null;
 
