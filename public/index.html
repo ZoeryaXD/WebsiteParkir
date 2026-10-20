@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Parking Dashboard - Prototipe</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Socket.io Client -->
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    @keyframes pulse-red {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .animate-alarm {
+      animation: pulse-red 1s infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <!-- Header / Navigation -->
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="bg-indigo-600 p-2 rounded-lg font-bold">🅿️</div>
+      <h1 class="text-xl font-bold tracking-wide">Smart Parking System <span class="text-xs bg-indigo-500/30 text-indigo-300 px-2 py-1 rounded border border-indigo-500/50">Prototipe</span></h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <a href="/booking.html" class="text-sm text-indigo-200 hover:text-white">Halaman Booking</a>
+      <span id="socket-status" class="text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Connecting...</span>
+      <span class="text-slate-400 text-sm" id="live-time">00:00:00</span>
+    </div>
+  </header>
+
+  <main class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- COL 1 & 2: DENAH LAHAN PARKIR & NOTIFIKASI ALARM -->
+    <section class="lg:col-span-2 space-y-6">
+
+      <!-- BANNER ALARM PERINGATAN (MISMATCH DETECTED) -->
+      <div id="alarm-banner" class="hidden bg-rose-950/80 border border-rose-600 p-4 rounded-xl flex items-center justify-between animate-alarm">
+        <div class="flex items-center gap-4">
+          <div class="text-3xl">🚨</div>
+          <div>
+            <h3 class="font-bold text-rose-200 text-lg">ALARM: Plat Tidak Sesuai Booking!</h3>
+            <p id="alarm-detail" class="text-sm text-rose-300">Slot A1 terdeteksi plat R 9999 XX (Harusnya: R 1234 AM)</p>
+          </div>
+        </div>
+        <button onclick="dismissAlarm()" class="bg-rose-800 hover:bg-rose-700 text-white text-xs px-3 py-2 rounded-lg font-semibold transition">Abaikan / Reset</button>
+      </div>
+
+      <!-- DENAH KETERSEDIAAN SLOT PARKIR INTERAKTIF -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-lg font-semibold flex items-center gap-2">
+            <span>🗺️</span> Denah Lahan Parkir Real-Time
+          </h2>
+          <div class="flex gap-4 text-xs">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Kosong</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Booked</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Terisi</span>
+          </div>
+        </div>
+
+        <!-- GRID SLOT PARKIR -->
+        <div id="parking-grid" class="space-y-5">
+          <!-- Rendered dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- TABEL LOG TRANSAKSI / BILLING -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <span>🧾</span> Riwayat Transaksi & Biaya Parkir
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-700/50 text-slate-400">
+              <tr>
+                <th class="p-3">Slot</th>
+                <th class="p-3">Plat Nomor</th>
+                <th class="p-3">Durasi</th>
+                <th class="p-3">Total Biaya</th>
+                <th class="p-3">Waktu Keluar</th>
+              </tr>
+            </thead>
+            <tbody id="transaction-table" class="divide-y divide-slate-700">
+              <tr class="text-slate-500 italic">
+                <td colspan="5" class="p-4 text-center">Belum ada transaksi parkir selesai.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- COL 3: PANEL SIMULATOR IOT & VISI KOMPUTER -->
+    <section class="space-y-6">
+
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg space-y-5">
+        <div class="border-b border-slate-700 pb-3">
+          <h2 class="text-lg font-semibold text-indigo-400 flex items-center gap-2">
+            <span>🛠️</span> Panel Simulator Hardware
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Gunakan panel ini untuk mensimulasikan input dari Palang Pintu, Sensor IR, dan ESP32-CAM Conveyor.</p>
+        </div>
+
+        <!-- SIMULASI 1: PALANG PINTU & VISI KOMPUTER -->
+        <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700/60 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">1. Palang Pintu Masuk</h3>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Plat Nomor Kendaraan:</label>
+            <input type="text" id="sim-gate-plate" value="R 1234 AM" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+          </div>
+          <button onclick="simCheckGate()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs py-2 rounded font-semibold transition">
+            Scan Plat & Cek Akses Pintu
+          </button>
+          <div id="gate-result" class="text-xs p-2 rounded bg-slate-800 text-slate-300 hidden"></div>
+        </div>
+
+        <!-- SIMULASI 2: SENSOR IR PER SLOT -->
+        <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700/60 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">2. Sensor IR Slot Parkir</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Pilih Slot:</label>
+              <select id="sim-ir-slot" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="A1">Slot A1</option>
+                <option value="A2">Slot A2</option>
+                <option value="A3">Slot A3</option>
+                <option value="B1">Slot B1</option>
+                <option value="B2">Slot B2</option>
+                <option value="B3">Slot B3</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Status IR:</label>
+              <select id="sim-ir-status" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white">
+                <option value="TERISI">TERISI (Mobil Masuk)</option>
+                <option value="KOSONG">KOSONG (Mobil Keluar)</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="simUpdateIR()" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 rounded font-semibold transition">
+            Kirim Sinyal IR
+          </button>
+        </div>
+
+        <!-- SIMULASI 3: ESP32-CAM CONVEYOR & VISI KOMPUTER -->
+        <div class="bg-slate-900/60 p-4 rounded-lg border border-slate-700/60 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">3. Kamera Slot Parkir</h3>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Slot Tujuan Kamera:</label>
+            <select id="sim-cam-slot" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-white mb-2">
+              <option value="A1">Slot A1 (Reguler)</option>
+              <option value="A2">Slot A2 (Reguler)</option>
+              <option value="A3">Slot A3 (Reguler)</option>
+              <option value="B1">Slot B1 (Booking: R 1234 AM)</option>
+              <option value="B2">Slot B2 (Booking: B 9999 XYZ)</option>
+              <option value="B3">Slot B3 (Booking)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Hasil OCR Plat dari Visi Komputer:</label>
+            <input type="text" id="sim-cam-plate" value="R 9999 XX" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <span class="text-[10px] text-slate-400 mt-1 block">Baris A mencatat kendaraan pada slot kosong; Baris B memverifikasi plat booking.</span>
+          </div>
+          <button onclick="simVerifyConveyor()" class="w-full bg-rose-600 hover:bg-rose-500 text-white text-xs py-2 rounded font-semibold transition">
+            Kamera Foto Plat & Verifikasi
+          </button>
+          <div id="slot-scan-result" class="text-xs p-2 rounded bg-slate-800 text-slate-300 hidden"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

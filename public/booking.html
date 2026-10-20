@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#142a24">
+  <title>Booking Parkir | Smart Parking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/booking.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Smart Parking, kembali ke dashboard">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span>Smart<span class="brand-light">Parking</span></span>
+    </a>
+    <a class="admin-link" href="/">Dashboard admin <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="page-shell">
+    <section class="page-heading">
+      <p class="eyebrow">RESERVASI PARKIR</p>
+      <h1>Amankan tempat parkirmu.</h1>
+      <p class="heading-copy">Pilih slot di baris booking dan daftarkan plat kendaraan.</p>
+    </section>
+
+    <div class="booking-layout">
+      <section class="slot-section" aria-labelledby="slots-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">BARIS B</p>
+            <h2 id="slots-heading">Pilih slot</h2>
+          </div>
+          <span id="availability-count" class="availability-count" aria-live="polite">Memuat slot...</span>
+        </div>
+
+        <div id="booking-slots" class="slot-grid" aria-live="polite"></div>
+
+        <div class="legend" aria-label="Keterangan status slot">
+          <span><i class="legend-dot available-dot"></i>Tersedia</span>
+          <span><i class="legend-dot selected-dot"></i>Dipilih</span>
+          <span><i class="legend-dot booked-dot"></i>Terbooking</span>
+        </div>
+      </section>
+
+      <section class="form-panel" aria-labelledby="form-heading">
+        <div class="form-heading">
+          <span class="step-number">01</span>
+          <div>
+            <p class="eyebrow">DETAIL KENDARAAN</p>
+            <h2 id="form-heading">Buat booking</h2>
+          </div>
+        </div>
+
+        <form id="booking-form">
+          <label for="plate-number">Plat nomor kendaraan</label>
+          <input id="plate-number" name="plateNumber" type="text" maxlength="20" autocomplete="off" placeholder="Contoh: B 1234 ABC" required>
+          <p class="input-hint">Gunakan plat yang sama saat kendaraan terdeteksi kamera.</p>
+
+          <div class="selected-slot-line">
+            <span>Slot pilihan</span>
+            <strong id="selected-slot">Belum dipilih</strong>
+          </div>
+
+          <button id="submit-booking" class="submit-button" type="submit" disabled>
+            Konfirmasi booking <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <p class="expiry-note"><span aria-hidden="true">◷</span> Booking berlaku 1 jam. Slot dilepas otomatis jika kendaraan belum terdeteksi di gate atau slot parkir.</p>
+        <div id="booking-message" class="booking-message" role="status" aria-live="polite" hidden></div>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <span>SMART PARKING <span id="connection-status">Menghubungkan...</span></span>
+      <span>Reservasi slot khusus baris B</span>
+    </footer>
+  </main>
+
+  <script src="/booking.js"></script>
+</body>
+</html>
