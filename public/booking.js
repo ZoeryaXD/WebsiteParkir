@@ -7,6 +7,8 @@ const bookingForm = document.getElementById('booking-form');
 const submitButton = document.getElementById('submit-booking');
 const bookingMessage = document.getElementById('booking-message');
 const connectionStatus = document.getElementById('connection-status');
+const digitalTicket = document.getElementById('digital-ticket');
+const printTicketButton = document.getElementById('print-ticket');
 
 let bookingSlots = [];
 let selectedSlotId = null;
@@ -107,6 +109,8 @@ bookingForm.addEventListener('submit', async event => {
     const bookedSlot = result.booking.slotId;
     const expiresAt = new Date(result.booking.expiresAt);
     activeBooking = { slotId: bookedSlot, plateNumber: result.booking.plateNumber };
+    localStorage.setItem('parkingDigitalTicketId', result.booking.ticket.id);
+    renderDigitalTicket(result.booking.ticket);
     selectedSlotId = null;
     selectedSlotLabel.textContent = bookedSlot;
     showBookingMessage(`Booking slot ${bookedSlot} berhasil. Plat ${result.booking.plateNumber} harus terdeteksi sebelum ${expiresAt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}.`);
@@ -118,6 +122,34 @@ bookingForm.addEventListener('submit', async event => {
     await loadBookingSlots();
   }
 });
+
+function renderDigitalTicket(ticket) {
+  digitalTicket.hidden = false;
+  document.getElementById('ticket-qr').src = ticket.qrImageDataUrl;
+  document.getElementById('ticket-plate').textContent = ticket.plateNumber;
+  document.getElementById('ticket-slot').textContent = ticket.slotId;
+  document.getElementById('ticket-printed-at').textContent = new Date(ticket.printedAt).toLocaleString('id-ID');
+  document.getElementById('ticket-status').textContent = ticket.status === 'ACTIVE' ? 'Aktif' : ticket.status;
+}
+
+async function restoreDigitalTicket() {
+  const ticketId = localStorage.getItem('parkingDigitalTicketId');
+  if (!ticketId) return;
+
+  try {
+    const response = await fetch(`/api/tickets/${encodeURIComponent(ticketId)}`);
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      localStorage.removeItem('parkingDigitalTicketId');
+      return;
+    }
+    renderDigitalTicket(result.ticket);
+  } catch (error) {
+    console.error('Gagal memuat karcis digital:', error);
+  }
+}
+
+printTicketButton.addEventListener('click', () => window.print());
 
 function startExpiryCountdown(expiresAt) {
   clearInterval(countdownTimer);
@@ -152,3 +184,4 @@ plateInput.addEventListener('input', () => {
 });
 
 loadBookingSlots();
+restoreDigitalTicket();

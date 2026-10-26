@@ -1,0 +1,99 @@
+{
+  "parkingSlots": [
+    {
+      "id": "A1",
+      "category": "REGULAR",
+      "status": "KOSONG",
+      "bookedPlate": null,
+      "currentPlate": null,
+      "entryTime": null,
+      "activeTicketId": null
+    },
+    {
+      "id": "A2",
+      "category": "REGULAR",
+      "status": "KOSONG",
+      "bookedPlate": null,
+      "currentPlate": null,
+      "entryTime": null,
+      "activeTicketId": null
+    },
+    {
+      "id": "A3",
+      "category": "REGULAR",
+      "status": "KOSONG",
+      "bookedPlate": null,
+      "currentPlate": null,
+      "entryTime": null,
+      "activeTicketId": null
+    },
+    {
+      "id": "B1",
+      "category": "BOOKING",
+      "status": "KOSONG",
+      "bookedPlate": null,
+      "currentPlate": null,
+      "entryTime": null,
+      "activeTicketId": null,
+      "bookingId": null,
+      "bookingCreatedAt": null,
+      "bookingExpiresAt": null,
+      "bookingDetectedAt": null,
+      "bookingStatus": null
+    },
+    {
+      "id": "B2",
+      "category": "BOOKING",
+      "status": "KOSONG",
+      "bookedPlate": null,
+      "currentPlate": null,
+      "entryTime": null,
+      "activeTicketId": null,
+      "bookingId": null,
+      "bookingCreatedAt": null,
+      "bookingExpiresAt": null,
+      "bookingDetectedAt": null,
+      "bookingStatus": null
+    },
+    {
+      "id": "B3",
+      "category": "BOOKING",
+      "status": "KOSONG",
+      "bookedPlate": null,
+      "currentPlate": null,
+      "entryTime": null,
+      "activeTicketId": null,
+      "bookingId": null,
+      "bookingCreatedAt": null,
+      "bookingExpiresAt": null,
+      "bookingDetectedAt": null,
+      "bookingStatus": null
+    }
+  ],
+  "tickets": [
+    {
+      "id": "f215e409-7db7-40f0-9f03-e34e27000fa3",
+      "type": "BOOKING",
+      "slotId": "B1",
+      "plateNumber": "B 111 DS",
+      "bookingId": "f48e0c63-f316-4bef-a155-7430edf872d5",
+      "printedAt": "2026-10-26T05:02:02.035Z",
+      "qrContent": "{\"version\":1,\"ticketId\":\"f215e409-7db7-40f0-9f03-e34e27000fa3\",\"printedAt\":\"2026-10-26T05:02:02.035Z\",\"type\":\"BOOKING\"}",
+      "status": "SCANNED",
+      "scannedAt": "2026-10-26T05:07:39.177Z"
+    }
+  ],
+  "transactionLogs": [
+    {
+      "id": "71ad1428-c920-479c-be29-460aaa010c52",
+      "ticketId": "f215e409-7db7-40f0-9f03-e34e27000fa3",
+      "slotId": "B1",
+      "plate": "B 111 DS",
+      "entryTime": "2026-10-26T05:02:02.035Z",
+      "exitTime": "2026-10-26T05:07:39.177Z",
+      "durationMinutes": 6,
+      "totalCost": 3000
+    }
+  ],
+  "alarmLogs": []
+}

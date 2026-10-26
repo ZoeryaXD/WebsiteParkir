@@ -72,6 +72,19 @@
 
         <p class="expiry-note"><span aria-hidden="true">◷</span> Booking berlaku 1 jam. Slot dilepas otomatis jika kendaraan belum terdeteksi di gate atau slot parkir.</p>
         <div id="booking-message" class="booking-message" role="status" aria-live="polite" hidden></div>
+        <article id="digital-ticket" class="digital-ticket" aria-live="polite" hidden>
+          <p class="eyebrow">KARCIS DIGITAL</p>
+          <h3>Booking berhasil</h3>
+          <img id="ticket-qr" class="ticket-qr" alt="QR code tiket booking">
+          <dl class="ticket-details">
+            <div><dt>Plat nomor</dt><dd id="ticket-plate"></dd></div>
+            <div><dt>Slot</dt><dd id="ticket-slot"></dd></div>
+            <div><dt>Dicetak</dt><dd id="ticket-printed-at"></dd></div>
+            <div><dt>Status</dt><dd id="ticket-status"></dd></div>
+          </dl>
+          <button id="print-ticket" class="print-ticket" type="button">Cetak / Simpan karcis</button>
+          <p class="ticket-hint">Simpan QR ini dan pindai saat keluar untuk menghitung biaya parkir.</p>
+        </article>
       </section>
     </div>
 

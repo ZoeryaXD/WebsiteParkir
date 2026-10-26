@@ -6,7 +6,8 @@ const path = require('path');
 const cors = require('cors');
 
 const apiRoutes = require('./src/routes/apiRoutes');
-const { parkingSlots } = require('./src/data/dummyData');
+const { parkingSlots } = require('./src/data/parkingDatabase');
+const bookingController = require('./src/controllers/bookingController');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.set('socketio', io);
+bookingController.restoreBookingExpirationTimers(io);
 
 // Mounting Routes
 app.use('/api', apiRoutes);

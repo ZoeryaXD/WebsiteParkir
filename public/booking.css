@@ -387,6 +387,72 @@ h1 {
   background: #fbefed;
 }
 
+.digital-ticket {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px dashed #9bb8a1;
+  border-radius: 6px;
+  background: #f6faf6;
+  text-align: center;
+}
+
+.digital-ticket h3 {
+  margin: 0 0 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+}
+
+.ticket-qr {
+  width: 190px;
+  height: 190px;
+  display: block;
+  margin: 0 auto 14px;
+  image-rendering: pixelated;
+}
+
+.ticket-details {
+  margin: 0;
+  text-align: left;
+  font-size: 11px;
+}
+
+.ticket-details div {
+  padding: 7px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #e2ebe3;
+}
+
+.ticket-details dt {
+  color: var(--muted);
+}
+
+.ticket-details dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.print-ticket {
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--white);
+  background: var(--forest);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ticket-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
 .page-footer {
   margin-top: 58px;
   padding-top: 15px;
@@ -476,5 +542,31 @@ h1 {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  @media print {
+    body * {
+      visibility: hidden !important;
+    }
+
+    #digital-ticket,
+    #digital-ticket * {
+      visibility: visible !important;
+    }
+
+    #digital-ticket {
+      display: block !important;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      border: 0;
+      color: #000;
+      background: #fff;
+    }
+
+    #print-ticket,
+    .ticket-hint {
+      display: none;
+    }
   }
 }

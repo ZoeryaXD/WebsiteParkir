@@ -1,5 +1,7 @@
-const { parkingSlots, transactionLogs, alarmLogs } = require('../data/dummyData');
+const { randomUUID } = require('node:crypto');
+const { parkingSlots, transactionLogs, alarmLogs, saveDatabase } = require('../data/parkingDatabase');
 const bookingController = require('./bookingController');
+const ticketController = require('./ticketController');
 
 // 1. Update dari Sensor IR
 exports.updateIRSensor = (req, res) => {
@@ -9,48 +11,65 @@ exports.updateIRSensor = (req, res) => {
 
   if (!slot) return res.status(404).json({ message: 'Slot tidak ditemukan' });
 
+  const wasOccupied = slot.status === 'TERISI';
+  let completedTransaction = null;
   slot.status = status;
 
   if (status === 'TERISI') {
-    slot.entryTime = new Date();
-    
-    // --- TAMBAHAN BARU: Trigger Python saat slot terisi ---
-    fetch('http://localhost:5001/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slotId: slot.id })
-    })
-    .then(response => console.log(`[TRIGGER OK] Python memindai Slot ${slot.id}`))
-    .catch(err => console.error('[TRIGGER ERROR] Python tidak merespon:', err));
-    // ------------------------------------------------------
-
-  } else if (status === 'KOSONG') {
-    let durationMinutes = 1;
-    let totalCost = parseInt(process.env.TARIF_PER_JAM || 3000);
-
-    if (slot.entryTime) {
-      const exitTime = new Date();
-      const diffMs = exitTime - new Date(slot.entryTime);
-      durationMinutes = Math.max(1, Math.ceil(diffMs / (1000 * 60)));
-      totalCost = Math.ceil(durationMinutes / 60) * totalCost;
+    if (!wasOccupied || !slot.entryTime) {
+      slot.entryTime = new Date();
     }
 
-    const log = {
-      slotId: slot.id,
-      plate: slot.currentPlate || 'Anonim (Karcis)',
-      entryTime: slot.entryTime,
-      exitTime: new Date(),
-      durationMinutes,
-      totalCost
-    };
-    transactionLogs.unshift(log);
+    if (!wasOccupied) {
+      fetch('http://localhost:5001/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotId: slot.id })
+      })
+        .then(() => console.log(`[TRIGGER OK] Python memindai Slot ${slot.id}`))
+        .catch(err => console.error('[TRIGGER ERROR] Python tidak merespon:', err));
+    }
 
-    slot.currentPlate = null;
-    slot.entryTime = null;
+  } else if (status === 'KOSONG') {
+    const hasParkingSession = wasOccupied || slot.currentPlate || slot.entryTime || slot.bookingDetectedAt;
 
-    io.emit('TRANSACTION_COMPLETED', log);
+    if (hasParkingSession) {
+      const activeTicket = ticketController.getActiveTicket(slot.activeTicketId);
+      if (activeTicket) {
+        completedTransaction = ticketController.completeTicket(activeTicket, slot);
+      } else {
+        let durationMinutes = 1;
+        let totalCost = parseInt(process.env.TARIF_PER_JAM || 3000);
+
+        if (slot.entryTime) {
+          const exitTime = new Date();
+          const diffMs = exitTime - new Date(slot.entryTime);
+          durationMinutes = Math.max(1, Math.ceil(diffMs / (1000 * 60)));
+          totalCost = Math.ceil(durationMinutes / 60) * totalCost;
+        }
+
+        completedTransaction = {
+          id: randomUUID(),
+          slotId: slot.id,
+          plate: slot.currentPlate || (slot.category === 'BOOKING' ? slot.bookedPlate : null) || 'Anonim (Karcis)',
+          entryTime: slot.entryTime,
+          exitTime: new Date(),
+          durationMinutes,
+          totalCost
+        };
+        transactionLogs.unshift(completedTransaction);
+        slot.currentPlate = null;
+        slot.entryTime = null;
+        slot.activeTicketId = null;
+        if (slot.category === 'BOOKING') {
+          bookingController.releaseBooking(slot);
+        }
+      }
+    }
   }
 
+  saveDatabase();
+  if (completedTransaction) io.emit('TRANSACTION_COMPLETED', completedTransaction);
   io.emit('SLOT_UPDATE', parkingSlots);
   res.json({ success: true, slot });
 };
@@ -81,6 +100,7 @@ exports.verifyConveyorCam = (req, res) => {
     slot.currentPlate = plate;
     slot.status = 'TERISI';
     slot.entryTime = new Date();
+    saveDatabase();
     io.emit('SLOT_UPDATE', parkingSlots);
     return res.json({ status: 'VALID', type: 'REGULAR', slotUpdated: true, slot });
   }
@@ -95,7 +115,7 @@ exports.verifyConveyorCam = (req, res) => {
 
   if (normalizePlate(slot.bookedPlate) !== normalizePlate(plate)) {
     const alarmData = {
-      id: Date.now(),
+      id: randomUUID(),
       slotId,
       detectedPlate: plate,
       expectedPlate: slot.bookedPlate,
@@ -104,13 +124,18 @@ exports.verifyConveyorCam = (req, res) => {
     };
 
     alarmLogs.unshift(alarmData);
+    saveDatabase();
     
     // Broadcast Alarm Real-time ke Dashboard Admin
     io.emit('ALARM_TRIGGERED', alarmData);
 
     return res.json({ status: 'MISMATCH', alarmSent: true, alarmData });
   }
-
+  slot.currentPlate = slot.bookedPlate;
+  slot.status = 'TERISI';
+  slot.entryTime ||= new Date();
   bookingController.markBookingDetected(slot, 'SLOT', io);
+  saveDatabase();
+  io.emit('SLOT_UPDATE', parkingSlots);
   res.json({ status: 'VALID', type: 'BOOKING_VERIFIED', alarmSent: false, slotUpdated: false });
 };

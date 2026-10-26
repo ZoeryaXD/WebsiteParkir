@@ -41,6 +41,8 @@ socket.on('TRANSACTION_COMPLETED', (log) => {
   addTransactionRow(log);
 });
 
+loadTransactionHistory();
+
 // ==========================================
 // RENDER FUNCTIONS
 // ==========================================
@@ -108,14 +110,17 @@ function renderParkingGrid(slots) {
 
 function addTransactionRow(log) {
   const tbody = document.getElementById('transaction-table');
-  
+
+  const transactionId = String(log.id || `${log.slotId}-${new Date(log.exitTime).getTime()}`);
+  if (tbody.querySelector(`[data-transaction-id="${transactionId}"]`)) return;
+
   // Hapus baris kosong default jika ada
   if (tbody.children[0] && tbody.children[0].innerText.includes('Belum ada transaksi')) {
     tbody.innerHTML = '';
   }
 
   const row = `
-    <tr class="hover:bg-slate-700/30 transition">
+    <tr data-transaction-id="${transactionId}" class="hover:bg-slate-700/30 transition">
       <td class="p-3 font-bold text-indigo-400">${log.slotId}</td>
       <td class="p-3 font-mono text-slate-200">${log.plate}</td>
       <td class="p-3">${log.durationMinutes} Menit</td>
@@ -125,6 +130,20 @@ function addTransactionRow(log) {
   `;
 
   tbody.innerHTML = row + tbody.innerHTML;
+}
+
+async function loadTransactionHistory() {
+  try {
+    const response = await fetch('/api/transactions');
+    const result = await response.json();
+    if (!response.ok || !result.success || !Array.isArray(result.data)) {
+      throw new Error('Riwayat transaksi tidak dapat dimuat.');
+    }
+
+    result.data.slice().reverse().forEach(addTransactionRow);
+  } catch (error) {
+    console.error('Gagal memuat riwayat transaksi:', error);
+  }
 }
 
 function dismissAlarm() {
